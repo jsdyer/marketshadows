@@ -17,3 +17,5 @@ python3 -m http.server 8000 --directory dist
 ```
 
 Open `http://localhost:8000/`. The build downloads the versioned, hash-pinned SheetJS 0.20.3 full browser script and its licence from the official project CDN. An offline build accepts these exact files with `python3 scripts/build.py --vendor-dir /path/to/asset-copies`. GitHub Pages serves `dist/` using relative URLs.
+
+Changes between reports ranks matching securities by absolute movement, increase or decrease for a chosen pair of dated reports. The workspace keeps trading and position measures separate and shows percentage-point movements for share-of-trading measures. It excludes absent, ambiguous and unchanged observations. The visible list caps at 15 and the ranked CSV includes every filtered movement with both source filenames and dates.

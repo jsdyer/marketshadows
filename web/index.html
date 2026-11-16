@@ -74,6 +74,19 @@
           </section>
         </aside>
       </div>
+
+      <section class="panel movers" aria-labelledby="movers-title">
+        <div class="head-row"><div><h2 id="movers-title">Changes between reports</h2><p id="movers-status" role="status"></p></div><button id="export-movers" type="button" disabled>Export ranked changes CSV</button></div>
+        <div class="controls movers-controls">
+          <label>Baseline report<select id="movers-baseline"></select></label>
+          <label>Measure<select id="movers-metric"></select></label>
+          <label>Rank by<select id="movers-direction"><option value="absolute">Largest move</option><option value="increase">Increases</option><option value="decrease">Decreases</option></select></label>
+        </div>
+        <p class="fine movers-method">Uses the current report and filters from Securities. Each observation joins a unique symbol and listing market. Share-of-trading measures change in percentage points.</p>
+        <div id="movers-table" class="scroll-table" tabindex="0" aria-label="Ranked changes table" hidden>
+          <table><thead><tr><th scope="col">Security</th><th scope="col">Baseline</th><th scope="col">Current</th><th id="movers-change-title" scope="col">Change</th></tr></thead><tbody id="movers-rows"></tbody></table>
+        </div>
+      </section>
     </div>
 
     <section id="about" class="method" aria-labelledby="about-title">

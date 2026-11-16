@@ -1,4 +1,4 @@
-import { comparison, csvCell, fields, normalize, rowKey } from './model.mjs';
+import { comparison, csvCell, fields, normalize, rankChanges, rowKey } from './model.mjs';
 
 const $ = id => document.getElementById(id);
 const pageSize = 30;
@@ -11,7 +11,7 @@ const demo = [
 ];
 
 let reports = [], type = 'trading', reportId = '', selected = null, page = 0;
-let filtered = [], series = [], inFlight = false;
+let filtered = [], series = [], movers = [], inFlight = false;
 
 function element(tag, text = '', cls) {
   const item = document.createElement(tag);
@@ -54,6 +54,10 @@ function orderedReports() {
 
 function currentReport() { return reports.find(report => report.id === reportId); }
 
+function matchesFilters(row, query, exchange) {
+  return (!exchange || row.market === exchange) && (!query || normalize(`${row.symbol} ${row.name}`).includes(query));
+}
+
 function syncControls() {
   const available = orderedReports();
   const report = available.find(item => item.id === reportId) || available[0];
@@ -80,6 +84,7 @@ function syncControls() {
   renderTable();
   renderSeries();
   renderFiles();
+  syncMovers(report, available);
 }
 
 function renderTable() {
@@ -88,8 +93,7 @@ function renderTable() {
   const exchange = $('exchange').value;
   const sort = $('sort').value;
   const shownFields = type === 'position' ? fields.position : fields.trading.slice(0, 3);
-  filtered = report ? report.rows.filter(row => (!exchange || row.market === exchange)
-    && (!query || normalize(`${row.symbol} ${row.name}`).includes(query))) : [];
+  filtered = report ? report.rows.filter(row => matchesFilters(row, query, exchange)) : [];
   const hasExactSymbol = row => Number(Boolean(query && normalize(row.symbol) === query));
   filtered.sort((a, b) => hasExactSymbol(b) - hasExactSymbol(a)
     || (sort === 'symbol' ? 0 : (b[sort] ?? -Infinity) - (a[sort] ?? -Infinity))
@@ -171,6 +175,55 @@ function renderSeries() {
   }
   $('chart').replaceChildren(...entries);
   $('export-series').disabled = !available.length;
+}
+
+function syncMovers(report, available) {
+  const earlier = report?.date ? available.filter(item => item.date && item.date < report.date) : [];
+  const baseline = $('movers-baseline');
+  const prior = baseline.value;
+  baseline.replaceChildren(...earlier.map(item => option(item.id, `${dateLabel(item)} · ${item.name}`)));
+  baseline.value = earlier.some(item => item.id === prior) ? prior : (earlier[0]?.id ?? '');
+  baseline.disabled = !earlier.length;
+
+  const metric = $('movers-metric');
+  const priorMetric = metric.value;
+  const measures = type === 'position' ? fields.position.filter(field => field.key === 'shares') : fields.trading;
+  metric.replaceChildren(...measures.map(field => option(field.key, field.label)));
+  metric.value = measures.some(field => field.key === priorMetric) ? priorMetric : measures[0].key;
+  metric.disabled = !earlier.length;
+  $('movers-direction').disabled = !earlier.length;
+  renderMovers();
+}
+
+function renderMovers() {
+  const current = currentReport();
+  const baseline = reports.find(report => report.id === $('movers-baseline').value);
+  const metric = fields[type].find(field => field.key === $('movers-metric').value);
+  const query = normalize($('search').value);
+  const exchange = $('exchange').value;
+  movers = baseline && metric ? rankChanges(current, baseline, metric, $('movers-direction').value)
+    .filter(({ row }) => matchesFilters(row, query, exchange)) : [];
+  $('movers-table').hidden = !movers.length;
+  $('export-movers').disabled = !movers.length;
+  $('movers-change-title').textContent = metric?.percent ? 'Change (pp)' : 'Change';
+  if (!baseline) {
+    $('movers-status').textContent = 'Open an earlier dated report of this type to see changes.';
+  } else {
+    const period = `${baseline.date} to ${current.date}`;
+    $('movers-status').textContent = movers.length
+      ? `Showing ${Math.min(15, movers.length)} of ${movers.length.toLocaleString('en-CA')} movements · ${period}`
+      : `No matched movements under these filters · ${period}`;
+  }
+  $('movers-rows').replaceChildren(...movers.slice(0, 15).map(({ row, before, after, change }) => {
+    const tr = element('tr');
+    const who = element('th', `${row.symbol} · ${row.market}`);
+    who.scope = 'row';
+    who.append(element('span', row.name, 'company'));
+    const delta = number(change, { ...metric, percent: false, signed: true });
+    tr.append(who, element('td', number(before, metric), 'num'), element('td', number(after, metric), 'num'),
+      element('td', delta, 'num ' + (change < 0 ? 'move-down' : 'move-up')));
+    return tr;
+  }));
 }
 
 function renderFiles() {
@@ -328,7 +381,12 @@ $('report').addEventListener('change', () => {
   page = 0;
   syncControls();
 });
-for (const id of ['search', 'exchange', 'sort']) $(id).addEventListener('input', () => { page = 0; renderTable(); });
+for (const id of ['search', 'exchange', 'sort']) $(id).addEventListener('input', () => {
+  page = 0;
+  renderTable();
+  if (id !== 'sort') renderMovers();
+});
+for (const id of ['movers-baseline', 'movers-metric', 'movers-direction']) $(id).addEventListener('change', renderMovers);
 $('prev').addEventListener('click', () => { page--; renderTable(); });
 $('next').addEventListener('click', () => { page++; renderTable(); });
 $('metric').addEventListener('change', renderSeries);
@@ -357,5 +415,18 @@ $('export-series').addEventListener('click', () => {
     ['Source file', 'Period start', 'Reporting date', 'Symbol', 'Market', 'Measure', 'Value', 'Matching rows'],
     ...series.map(item => [item.report.name, item.report.start, item.report.date, selected.symbol, selected.market,
       metric.percent ? `${metric.label} (%)` : metric.label, item.value, item.count]),
+  ]);
+});
+
+$('export-movers').addEventListener('click', () => {
+  const current = currentReport();
+  const baseline = reports.find(report => report.id === $('movers-baseline').value);
+  const metric = fields[type].find(field => field.key === $('movers-metric').value);
+  if (!current || !baseline || !metric || !movers.length) return;
+  download(`market-shadows-${type}-ranked-changes.csv`, [
+    ['Baseline file', 'Baseline date', 'Current file', 'Current date', 'Symbol', 'Market', 'Company',
+      'Measure', 'Baseline value', 'Current value', metric.percent ? 'Change (percentage points)' : 'Change'],
+    ...movers.map(({ row, before, after, change }) => [baseline.name, baseline.date, current.name,
+      current.date, row.symbol, row.market, row.name, metric.label, before, after, change]),
   ]);
 });

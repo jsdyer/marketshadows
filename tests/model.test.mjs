@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { comparison, csvCell, parseCsv, parseReport, reportPeriod, rowKey } from '../web/model.mjs';
+import { comparison, csvCell, parseCsv, parseReport, rankChanges, reportPeriod, rowKey } from '../web/model.mjs';
 
 test('actual CIRO trading headers, quoted fields and date range', () => {
   const text = 'Security,Company Name,Listing Market,Short Sale Trades,% Total Trades,Short Traded Volume,% Total Traded Volume,Short Traded Value,% Total Traded Value\r\n'
@@ -40,4 +40,23 @@ test('rejects unsupported inputs and prevents spreadsheet formula injection', ()
   assert.throws(() => parseReport([{ rows: [['Any other CSV', 20]] }], 'notes.csv'), /No supported/);
   assert.equal(csvCell('=HYPERLINK("https://example.com/")'), `"'=HYPERLINK(""https://example.com/"")"`);
   assert.equal(csvCell(-10), '"-10"');
+});
+
+test('ranking joins unique securities by market, filters direction and rounds percentage points', () => {
+  const row = (symbol, market, volumePercent) => ({ symbol, market, name: symbol, volumePercent });
+  const current = { type: 'trading', rows: [
+    row('A', 'TSX', 2), row('A', 'TSXV', 9), row('B', 'TSX', 7), row('C', 'TSX', 5),
+    row('D', 'TSX', 3.2), row('E', 'TSX', 3.021), row('E', 'TSX', 4),
+  ] };
+  const baseline = { type: 'trading', rows: [
+    row('A', 'TSX', 8.511), row('A', 'TSXV', 6), row('B', 'TSX', 1),
+    row('C', 'TSX', 4), row('C', 'TSX', 3), row('D', 'TSX', 3.2),
+    row('E', 'TSX', 2),
+  ] };
+  const metric = { key: 'volumePercent', decimals: 3 };
+  const values = result => result.map(({ row, change }) => [row.symbol, row.market, change]);
+  assert.deepEqual(values(rankChanges(current, baseline, metric)), [['A', 'TSX', -6.511], ['B', 'TSX', 6], ['A', 'TSXV', 3]]);
+  assert.deepEqual(values(rankChanges(current, baseline, metric, 'increase')), [['B', 'TSX', 6], ['A', 'TSXV', 3]]);
+  assert.deepEqual(values(rankChanges(current, baseline, metric, 'decrease')), [['A', 'TSX', -6.511]]);
+  assert.deepEqual(rankChanges(current, { ...baseline, type: 'position' }, metric), []);
 });

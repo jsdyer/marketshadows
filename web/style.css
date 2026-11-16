@@ -118,3 +118,10 @@ small { display: block; color: var(--muted); font-size: .72rem; overflow-wrap: a
   .head-row { flex-wrap: wrap; }
   table { min-width: 465px; }
 }
+
+.movers { margin-block: 1rem; }
+.movers-controls { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); margin-block: .65rem; }
+.movers-method { margin-bottom: .65rem; }
+.move-up { color: #346c41; font-weight: 700; }
+.move-down { color: #8b472d; font-weight: 700; }
+@media (max-width: 600px) { .movers-controls { grid-template-columns: 1fr; } }

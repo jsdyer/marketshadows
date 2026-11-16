@@ -129,6 +129,34 @@ export function comparison(reports, type, key, metric) {
   }).sort((a, b) => (a.report.date || '9999').localeCompare(b.report.date || '9999') || a.report.name.localeCompare(b.report.name));
 }
 
+export function rankChanges(current, baseline, metric, direction = 'absolute') {
+  if (!current || !baseline || current.type !== baseline.type) return [];
+  const observationsByKey = rows => {
+    const records = new Map();
+    for (const row of rows) {
+      const key = rowKey(row);
+      records.set(key, records.has(key) ? null : row);
+    }
+    return records;
+  };
+  const prior = observationsByKey(baseline.rows);
+  const recent = observationsByKey(current.rows);
+  const movements = [];
+  for (const [key, row] of recent) {
+    const before = prior.get(key)?.[metric.key];
+    const after = row?.[metric.key];
+    if (!Number.isFinite(before) || !Number.isFinite(after)) continue;
+    const change = Number((after - before).toFixed(metric.decimals ?? 0));
+    if (change === 0 || (direction === 'increase' && change < 0)
+      || (direction === 'decrease' && change > 0)) continue;
+    movements.push({ row, before, after, change });
+  }
+  const score = direction === 'decrease' ? value => -value
+    : direction === 'increase' ? value => value : Math.abs;
+  return movements.sort((a, b) => score(b.change) - score(a.change)
+    || a.row.symbol.localeCompare(b.row.symbol) || a.row.market.localeCompare(b.row.market));
+}
+
 export function csvCell(value) {
   let text = String(value ?? '');
   if (typeof value === 'string' && /^[\s]*[+=@-]/.test(text)) text = `'${text}`;
