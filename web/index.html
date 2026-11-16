@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Open Canadian short sale and short position reports locally, search securities and compare reporting dates.">
+  <meta name="theme-color" content="#18231b">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Market Shadows · CoolCode</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <a class="skip" href="#workbench">Skip to reports</a>
+  <header class="mast">
+    <div class="wrap top"><a href="https://coolcode.ca/" class="brand"><span aria-hidden="true">&gt;_</span> CoolCode.ca</a><a href="#about">About these reports</a></div>
+    <div class="wrap hero">
+      <div>
+        <h1>Market<br> Shadows<span>.</span></h1>
+        <p>Explore Canada’s short sale trading and reported positions. Open the reports you want to compare, then follow a security across reporting dates.</p>
+      </div>
+      <aside class="terminal" aria-label="File privacy">
+        <div class="terminal-top"><span class="lamp" aria-hidden="true"></span> Local report workspace</div>
+        <dl><div><dt>Input</dt><dd>CSV · XLS · XLSX</dd></div><div><dt>Processing</dt><dd>This browser tab</dd></div><div><dt>Storage</dt><dd>Cleared when you leave</dd></div></dl>
+      </aside>
+    </div>
+  </header>
+
+  <main id="workbench" class="wrap main">
+    <section class="panel intake" id="drop-zone" aria-labelledby="intake-title">
+      <div><h2 id="intake-title">Open a market report</h2><p>Drop one or more files here, or choose the CSV trading summary and XLS short position reports saved on your device.</p></div>
+      <div class="actions"><input id="file" type="file" accept=".csv,.xls,.xlsx" multiple hidden><button id="pick" type="button" class="primary">Choose files</button><button id="demo" type="button">Try sample reports</button></div>
+      <p id="import-status" class="notice" role="status" aria-live="polite" hidden></p>
+      <ul id="issues" class="issues" hidden></ul>
+      <noscript><p>Enable JavaScript in your browser to read a report locally.</p></noscript>
+    </section>
+
+    <div id="workspace" hidden>
+      <div id="sample" class="sample" hidden>Sample workspace with fictional securities and values.</div>
+      <div class="work-grid">
+        <section class="panel market" aria-labelledby="market-title">
+          <div class="head-row"><div><h2 id="market-title">Securities</h2><p id="results-status" aria-live="polite"></p></div><button id="export" type="button">Export filtered CSV</button></div>
+          <div class="views" aria-label="Report type">
+            <button type="button" id="view-trading" aria-pressed="true">Short sale trading</button>
+            <button type="button" id="view-position" aria-pressed="false">Short positions</button>
+          </div>
+          <div class="controls">
+            <label>Report<select id="report"></select></label>
+            <label>Symbol or name<input id="search" type="search" autocomplete="off" maxlength="95" placeholder="e.g. TSX symbol"></label>
+            <label>Listing market<select id="exchange"><option value="">All markets</option></select></label>
+            <label>Sort<select id="sort"></select></label>
+          </div>
+          <p id="report-meta" class="fine"></p>
+          <div id="empty" class="empty" hidden></div>
+          <div id="table" class="scroll-table" tabindex="0" aria-label="Securities table"><table><thead id="head"></thead><tbody id="rows"></tbody></table></div>
+          <div id="paginate" class="paginate" hidden><button id="prev" type="button">← Previous</button><span id="page"></span><button id="next" type="button">Next →</button></div>
+        </section>
+        <aside class="side">
+          <section class="panel compare" aria-labelledby="compare-title">
+            <h2 id="compare-title">Compare dates</h2>
+            <p id="compare-empty">Select a security to compare its observations across your reports.</p>
+            <div id="compare" hidden>
+              <h3 id="compare-symbol"></h3><p id="compare-name" class="fine"></p>
+              <label for="metric">Measure</label><select id="metric"></select>
+              <p id="comparison-tip" class="fine"></p>
+              <ol id="chart" aria-label="Report observations"></ol>
+              <button id="export-series" type="button">Export comparison CSV</button>
+            </div>
+          </section>
+          <section class="panel files" aria-labelledby="files-title">
+            <div class="head-row"><h2 id="files-title">Files in this tab</h2><button id="clear" type="button">Clear all</button></div>
+            <p class="fine">Check the reporting end date shown for each file.</p>
+            <ul id="files"></ul>
+          </section>
+        </aside>
+      </div>
+    </div>
+
+    <section id="about" class="method" aria-labelledby="about-title">
+      <h2 id="about-title">Reading the reports</h2>
+      <div class="method-grid">
+        <div><h3>Short sale trading</h3><p>Activity marked short during a half-month period. The share of traded volume uses total reported trading volume as its denominator.</p></div>
+        <div><h3>Short positions</h3><p>Aggregate shares short on a reporting date, with the published change since the prior report. Compare like reports and check the original filing dates.</p></div>
+        <div><h3>Original reports</h3><p>Visit CIRO’s markets section to download the short sale trading statistics or consolidated short position reports. This app links to the publisher and analyzes files you supply.</p><a href="https://www.ciro.ca/">CIRO homepage ↗</a></div>
+      </div>
+    </section>
+  </main>
+  <footer class="foot"><div class="wrap top"><a href="https://coolcode.ca/">CoolCode.ca</a><a href="https://github.com/jsdyer/marketshadows">Source code ↗</a><a href="./vendor/SHEETJS-LICENSE">Workbook parser licence</a></div></footer>
+</body>
+</html>
