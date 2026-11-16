@@ -90,7 +90,9 @@ function renderTable() {
   const shownFields = type === 'position' ? fields.position : fields.trading.slice(0, 3);
   filtered = report ? report.rows.filter(row => (!exchange || row.market === exchange)
     && (!query || normalize(`${row.symbol} ${row.name}`).includes(query))) : [];
-  filtered.sort((a, b) => (sort === 'symbol' ? 0 : (b[sort] ?? -Infinity) - (a[sort] ?? -Infinity))
+  const hasExactSymbol = row => Number(Boolean(query && normalize(row.symbol) === query));
+  filtered.sort((a, b) => hasExactSymbol(b) - hasExactSymbol(a)
+    || (sort === 'symbol' ? 0 : (b[sort] ?? -Infinity) - (a[sort] ?? -Infinity))
     || a.symbol.localeCompare(b.symbol) || a.market.localeCompare(b.market));
   const count = filtered.length;
   const pages = Math.max(1, Math.ceil(count / pageSize));
