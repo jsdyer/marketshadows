@@ -1,6 +1,7 @@
 import { comparison, csvCell, fields, normalize, rankChanges, rowKey } from './model.mjs';
 
 const $ = id => document.getElementById(id);
+const labels = { trading: 'Trading summary', position: 'Short positions', corrections: 'Trading corrections' };
 const pageSize = 30;
 const maxReports = 24;
 const maxBytes = 12 * 1024 * 1024;
@@ -38,7 +39,7 @@ function number(value, field) {
 
 function dateLabel(report) {
   if (!report.date) return 'Date unknown';
-  return report.type === 'trading' && report.start && report.start <= report.date
+  return report.type !== 'position' && report.start && report.start <= report.date
     ? `${report.start} – ${report.date}` : report.date;
 }
 
@@ -49,7 +50,7 @@ function orderedReports() {
 function currentReport() { return reports.find(report => report.id === reportId); }
 
 function matchesFilters(row, query, exchange) {
-  return (!exchange || row.market === exchange) && (!query || normalize(`${row.symbol} ${row.name}`).includes(query));
+  return (!exchange || (type === 'corrections' ? row.tradePeriod : row.market) === exchange) && (!query || normalize(`${row.symbol} ${row.name || ''}`).includes(query));
 }
 
 function syncControls() {
@@ -57,14 +58,20 @@ function syncControls() {
   const report = available.find(item => item.id === reportId) || available[0];
   reportId = report?.id || '';
   $('workspace').hidden = !reports.length;
-  $('view-trading').setAttribute('aria-pressed', String(type === 'trading'));
-  $('view-position').setAttribute('aria-pressed', String(type === 'position'));
+  for (const key of Object.keys(labels)) $('view-' + key).setAttribute('aria-pressed', String(type === key));
+  const corrections = type === 'corrections';
+  $('market-title').textContent = corrections ? 'Trading corrections' : 'Securities';
+  $('filter-label').textContent = corrections ? 'Period when trade occurred' : 'Listing market';
+  $('query-label').textContent = corrections ? 'Security symbol' : 'Symbol or name';
+  $('correction-note').hidden = !corrections;
+  $('movers-title').closest('section').hidden = corrections;
+  $('compare-title').closest('section').hidden = corrections;
   $('report').replaceChildren(...available.map(item => option(item.id, `${dateLabel(item)} · ${item.name}`)));
   $('report').value = reportId;
   $('report').disabled = !report;
   const priorMarket = $('exchange').value;
-  const markets = [...new Set(report?.rows.map(row => row.market))].sort();
-  $('exchange').replaceChildren(option('', 'All markets'), ...markets.map(market => option(market, market)));
+  const markets = [...new Set(report?.rows.map(row => corrections ? row.tradePeriod : row.market))].sort();
+  $('exchange').replaceChildren(option('', corrections ? 'All trade periods' : 'All markets'), ...markets.map(market => option(market, market)));
   if (markets.includes(priorMarket)) $('exchange').value = priorMarket;
   const sorting = [option('symbol', 'Symbol A–Z')];
   sorting.push(...fields[type].map(field => option(field.key, `${field.label} ↓`)));
@@ -77,7 +84,7 @@ function syncControls() {
   renderTable();
   renderSeries();
   renderFiles();
-  syncMovers(report, available);
+  if (!corrections) syncMovers(report, available);
 }
 
 function renderTable() {
@@ -85,12 +92,13 @@ function renderTable() {
   const query = normalize($('search').value);
   const exchange = $('exchange').value;
   const sort = $('sort').value;
-  const shownFields = type === 'position' ? fields.position : fields.trading.slice(0, 3);
+  const corrections = type === 'corrections';
+  const shownFields = fields[type].slice(0, 3);
   filtered = report ? report.rows.filter(row => matchesFilters(row, query, exchange)) : [];
   const hasExactSymbol = row => Number(Boolean(query && normalize(row.symbol) === query));
   filtered.sort((a, b) => hasExactSymbol(b) - hasExactSymbol(a)
     || (sort === 'symbol' ? 0 : (b[sort] ?? -Infinity) - (a[sort] ?? -Infinity))
-    || a.symbol.localeCompare(b.symbol) || a.market.localeCompare(b.market));
+    || a.symbol.localeCompare(b.symbol) || (a.tradePeriod || a.market).localeCompare(b.tradePeriod || b.market));
   const count = filtered.length;
   const pages = Math.max(1, Math.ceil(count / pageSize));
   page = Math.min(page, pages - 1);
@@ -99,7 +107,7 @@ function renderTable() {
   $('report-meta').hidden = !report;
   $('table').hidden = !count;
   $('empty').hidden = Boolean(count);
-  $('empty').textContent = report ? 'No securities match these filters.' : 'Open a report for this view.';
+  $('empty').textContent = report ? (corrections && !report.rows.length ? 'CIRO lists no corrections in this report.' : 'No securities match these filters.') : 'Open a report for this view.';
   $('export').disabled = !count;
   $('paginate').hidden = pages < 2;
   $('page').textContent = `Page ${page + 1} of ${pages}`;
@@ -107,7 +115,7 @@ function renderTable() {
   $('next').disabled = page >= pages - 1;
 
   const headers = element('tr');
-  for (const name of ['Symbol and company', 'Market', ...shownFields.map(field => field.label)]) {
+  for (const name of [corrections ? 'Symbol' : 'Symbol and company', corrections ? 'Period when trade occurred' : 'Market', ...shownFields.map(field => field.label)]) {
     const header = element('th', name);
     header.scope = 'col';
     headers.append(header);
@@ -118,6 +126,12 @@ function renderTable() {
     const entry = element('tr');
     const identity = element('th');
     identity.scope = 'row';
+    if (corrections) {
+      identity.textContent = row.symbol;
+      entry.append(identity, element('td', row.tradePeriod), element('td', number(row.adjustment, shownFields[0]), 'num'));
+      rows.append(entry);
+      continue;
+    }
     const select = button(row.symbol, () => {
       selected = row;
       $('rows').querySelector('[aria-pressed="true"]')?.setAttribute('aria-pressed', 'false');
@@ -224,7 +238,7 @@ function renderFiles() {
   for (const report of reports) {
     const li = element('li');
     const name = element('div', report.name, 'filename');
-    const parts = [report.type === 'trading' ? 'Trading summary' : 'Short positions', `${report.rows.length.toLocaleString('en-CA')} rows`];
+    const parts = [labels[report.type], `${report.rows.length.toLocaleString('en-CA')} rows`];
     parts.push(`SHA-256 ${report.id.slice(0, 12)}…`);
     const summary = element('small', parts.join(' · '));
     summary.title = `SHA-256 ${report.id}`;
@@ -346,8 +360,9 @@ $('paste-form').addEventListener('submit', async event => {
     $('paste-form').closest('details').open = false;
   }
 });
-for (const key of ['trading', 'position']) $('view-' + key).addEventListener('click', () => {
+for (const key of Object.keys(labels)) $('view-' + key).addEventListener('click', () => {
   type = key;
+  selected = null;
   reportId = '';
   page = 0;
   syncControls();
@@ -360,7 +375,7 @@ $('report').addEventListener('change', () => {
 for (const id of ['search', 'exchange', 'sort']) $(id).addEventListener('input', () => {
   page = 0;
   renderTable();
-  if (id !== 'sort') renderMovers();
+  if (id !== 'sort' && type !== 'corrections') renderMovers();
 });
 for (const id of ['movers-baseline', 'movers-metric', 'movers-direction']) $(id).addEventListener('change', renderMovers);
 $('prev').addEventListener('click', () => { page--; renderTable(); });
@@ -379,6 +394,13 @@ $('clear').addEventListener('click', () => {
 });
 $('export').addEventListener('click', () => {
   const report = currentReport();
+  if (type === 'corrections') {
+    download(`market-shadows-corrections-${report.date || 'undated'}.csv`, [
+      ['Source file', 'Submission period start', 'Submission period end', 'Period when trade occurred', 'Security', 'Change in short volume (shares)'],
+      ...filtered.map(row => [report.name, report.start, report.date, row.tradePeriod, row.symbol, row.adjustment]),
+    ]);
+    return;
+  }
   const metrics = fields[type];
   download(`market-shadows-${type}-${report.date || 'undated'}.csv`, [
     ['Source file', 'Period start', 'Reporting date', 'Symbol', 'Market', 'Company', ...metrics.map(field => field.percent ? `${field.label} (%)` : field.label)],

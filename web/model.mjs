@@ -1,4 +1,5 @@
 export const fields = {
+  corrections: [{ key: 'adjustment', label: 'Change in short volume (shares)', signed: true }],
   position: [
     { key: 'shares', label: 'Shares short' },
     { key: 'change', label: 'Reported net change', signed: true },
@@ -71,6 +72,13 @@ function columnMap(row, schema) {
 function findHeader(rows) {
   for (const [index, row] of rows.slice(0, 30).entries()) {
     const identity = columnMap(row, shared);
+    const correction = columnMap(row, {
+      tradePeriod: ['Reporting Period when trade occurred'],
+      adjustment: ['Change in Short Volume Traded'],
+    });
+    if (identity.symbol >= 0 && correction.tradePeriod >= 0 && correction.adjustment >= 0) {
+      return { index, type: 'corrections', columns: { ...identity, ...correction } };
+    }
     if (identity.symbol < 0 || identity.market < 0) continue;
     const trading = columnMap(row, schemas.trading);
     if (trading.volume >= 0) return { index, type: 'trading', columns: { ...identity, ...trading } };
@@ -108,14 +116,21 @@ export function parseReport(sheets, name) {
       if (!record.some(value => String(value ?? '').trim())) continue;
       const read = key => record[columns[key]];
       const symbol = String(read('symbol') ?? '').trim().toUpperCase().slice(0, 60);
+      if (type === 'corrections') {
+        const tradePeriod = String(read('tradePeriod') ?? '').trim();
+        const adjustment = numeric(read('adjustment'), true);
+        if (tradePeriod && symbol && Number.isSafeInteger(adjustment)) rows.push({ symbol, tradePeriod, adjustment });
+        else skipped++;
+        continue;
+      }
       const market = String(read('market') ?? '').trim().toUpperCase().slice(0, 60);
       const measures = Object.fromEntries(fields[type].map(field => [field.key, numeric(read(field.key), field.signed, field.percent)]));
       if (!symbol || !market || measures[fields[type][0].key] === null) { skipped++; continue; }
       rows.push({ symbol, market, name: String(read('name') ?? '').trim().slice(0, 240), ...measures });
     }
-    if (rows.length) return { type, name, sheet: sheet.name || '', rows, skipped, ...reportPeriod(name) };
+    if (rows.length || (type === 'corrections' && !skipped)) return { type, name, sheet: sheet.name || '', rows, skipped, ...reportPeriod(name) };
   }
-  throw new Error('No supported report table found. Import a Short Sale Trading Summary CSV or a Consolidated Short Position workbook.');
+  throw new Error('No supported report table found. Choose a CIRO trading summary, trading corrections CSV or consolidated short position workbook.');
 }
 
 export function rowKey(row) {

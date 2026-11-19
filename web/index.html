@@ -28,7 +28,7 @@
 
   <main id="workbench" class="wrap main">
     <section class="panel intake" id="drop-zone" aria-labelledby="intake-title">
-      <div><h2 id="intake-title">Open a market report</h2><p>Drop CIRO’s trading-summary CSV or short-position workbook here. Open two reports of the same type to rank changes between dates.</p></div>
+      <div><h2 id="intake-title">Open a market report</h2><p>Drop CIRO’s trading summary, trading corrections CSV or short-position workbook here. Open two summaries or position reports of the same type to rank changes between dates.</p></div>
       <div class="actions"><input id="file" type="file" accept=".csv,.xls,.xlsx" multiple hidden><button id="pick" type="button" class="primary">Choose files</button><a href="#get-reports">Find the reports ↓</a></div>
       <details class="paste-panel">
         <summary>Paste rows from a report</summary>
@@ -51,14 +51,16 @@
           <div class="head-row"><div><h2 id="market-title">Securities</h2><p id="results-status" aria-live="polite"></p></div><button id="export" type="button">Export filtered CSV</button></div>
           <div class="views" aria-label="Report type">
             <button type="button" id="view-trading" aria-pressed="true">Short sale trading</button>
+            <button type="button" id="view-corrections" aria-pressed="false">Trading corrections</button>
             <button type="button" id="view-position" aria-pressed="false">Short positions</button>
           </div>
           <div class="controls">
             <label>Report<select id="report"></select></label>
-            <label>Symbol or name<input id="search" type="search" autocomplete="off" maxlength="95" placeholder="e.g. TSX symbol"></label>
-            <label>Listing market<select id="exchange"><option value="">All markets</option></select></label>
+            <label><span id="query-label">Symbol or name</span><input id="search" type="search" autocomplete="off" maxlength="95" placeholder="e.g. TSX symbol"></label>
+            <label><span id="filter-label">Listing market</span><select id="exchange"><option value="">All markets</option></select></label>
             <label>Sort<select id="sort"></select></label>
           </div>
+          <p id="correction-note" hidden>The report dates tell you when corrections were submitted. Each row gives the period of the original trade. A positive adjustment adds shares to that period’s short-traded volume. A negative adjustment removes shares.</p>
           <p id="report-meta" class="fine"></p>
           <div id="empty" class="empty" hidden></div>
           <div id="table" class="scroll-table" tabindex="0" aria-label="Securities table"><table><thead id="head"></thead><tbody id="rows"></tbody></table></div>
@@ -103,7 +105,7 @@
       <div class="method-grid">
         <div><h3>Short sale trading</h3><p>Activity marked short during a half-month period. The share of traded volume uses total reported trading volume as its denominator.</p></div>
         <div><h3>Short positions</h3><p>Aggregate shares short on a reporting date, with the published change since the prior report. Compare like reports and check the original filing dates.</p></div>
-        <div id="get-reports"><h3>Get the original files</h3><p>On CIRO’s site, open Markets → Reports, Statistics and Other Information → Short Sale Trading Statistics and Reports. Under Short Sale Trading Statistics Summary or Consolidated Short Position Report, save the files for two reporting dates. Keep their original filenames so the dates travel with your exports.</p><a href="https://www.ciro.ca/" target="_blank" rel="noopener">ciro.ca</a></div>
+        <div id="get-reports"><h3>Get the original files</h3><p>On CIRO’s site, open Markets → Reports, Statistics and Other Information → Short Sale Trading Statistics and Reports. Choose the Summary, Corrections or Consolidated Short Position section and download a report. Keep their original filenames so the dates travel with your exports.</p><a href="https://www.ciro.ca/markets/reports-statistics-and-other-information/short-sale-trading-statistics-and-reports" target="_blank" rel="noopener">Download CIRO reports ↗</a></div>
       </div>
     </section>
   </main>

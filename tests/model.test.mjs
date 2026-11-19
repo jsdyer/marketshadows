@@ -60,3 +60,16 @@ test('ranking joins unique securities by market, filters direction and rounds pe
   assert.deepEqual(values(rankChanges(current, baseline, metric, 'decrease')), [['A', 'TSX', -6.511]]);
   assert.deepEqual(rankChanges(current, { ...baseline, type: 'position' }, metric), []);
 });
+
+test('corrections keep original trade periods and signed adjustments without market or issuer columns', () => {
+  const head = ['Reporting Period when trade occurred', ' Security', ' Change in Short Volume Traded  (+/-)'];
+  const name = '20261101-20261115_ShortSaleTradingCorrectionsReport.csv';
+  const read = rows => parseReport([{ rows: [['IIROC Short Sale Trading Corrections Report'], head, ...rows] }], name);
+  const report = read([['1-15 November 2026', 'A', '+300'], ['16-30 April 2025', 'A', '-100']]);
+  assert.equal(report.type, 'corrections');
+  assert.equal(report.start, '2026-11-01');
+  assert.equal(report.date, '2026-11-15');
+  assert.deepEqual(report.rows[1], { symbol: 'A', tradePeriod: '16-30 April 2025', adjustment: -100 });
+  assert.deepEqual(read([]).rows, []);
+  assert.throws(() => read([['bad', 'A', 'invalid']]), /No supported/);
+});

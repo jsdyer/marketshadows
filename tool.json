@@ -1,0 +1,23 @@
+{
+  "id": "marketshadows",
+  "title": "Market Shadows",
+  "description": "Read CIRO short-sale summaries, signed trading corrections and short positions in your browser.",
+  "category": "money",
+  "tags": [
+    "ciro",
+    "tsx",
+    "short",
+    "selling",
+    "stocks",
+    "volume"
+  ],
+  "icon": "chart-candlestick",
+  "url": "/marketshadows/",
+  "source": "https://github.com/jsdyer/marketshadows",
+  "hosting": "project",
+  "access": "browser",
+  "data_info": {
+    "mode": "local",
+    "detail": "Open CIRO summary, trading corrections and position files or paste original report rows."
+  }
+}
