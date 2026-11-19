@@ -10,7 +10,7 @@ Market Shadows recognizes the standard English CIRO summary CSV and position XLS
 
 Search by security symbol or company name, filter by listing market, and select a row to compare dates. Short sale trading includes volume and the reported share of trading volume. Consolidated positions show reported shares short at a date and the net change in the source. Comparisons match symbol and listing market. Check issuer identities and corporate actions in the original records. A blank observation means the corresponding value or unambiguous record was unavailable. Exports retain the report filename and date. Trading corrections have a dedicated view. Each signed share adjustment belongs to the original trade period on its row. The filename dates identify the period of submission. Search by symbol, filter by trade period, and export both periods. A recognized header with no entries opens as an empty report. [CIRO report downloads](https://www.ciro.ca/markets/reports-statistics-and-other-information/short-sale-trading-statistics-and-reports)
 
-Inputs are read locally in a browser worker and stay in tab memory. No CIRO data is bundled, harvested, or served by this repo. Users can export the current analysis locally. The workbook parser uses a same-origin copy of SheetJS Community Edition under Apache 2.0. No analytics or runtime library CDN is used.
+Inputs are read locally in a browser worker and stay in tab memory. No CIRO data is bundled, harvested, or served by this repo. Users can export the current analysis locally. The workbook parser uses a same-origin copy of SheetJS Community Edition under Apache 2.0. CoolCode counts page opens by tool ID. Uploaded file contents and names stay in the browser.
 
 ## Build and test
 
