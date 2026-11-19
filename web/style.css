@@ -57,7 +57,13 @@ h2 { font-size: clamp(1.32rem, 2.35vw, 1.9rem); line-height: 1.16; letter-spacin
 .primary:hover:not(:disabled) { color: #fff; background: #22452d; }
 .notice, .issues { flex: 1 0 100%; overflow-wrap: anywhere; }
 .issues { margin: 0; padding-left: 1rem; color: #803b30; font-size: .83rem; }
-.sample { margin-top: 1rem; border-left: 4px solid #a58b42; padding: .5rem .75rem; background: #f0e6c8; font-size: .83rem; }
+.paste-panel { flex-basis: 100%; border-top: 1px solid var(--line); padding-top: .8rem; }
+.paste-panel summary, .actions a { color: var(--green); font-weight: 650; cursor: pointer; }
+.paste-panel form { display: grid; gap: .4rem; margin-top: .8rem; }
+.paste-panel input { max-width: 13rem; }
+.paste-panel textarea { width: 100%; resize: vertical; padding: .55rem; color: var(--ink); background: var(--panel); border: 1px solid #a9b1a0; font: .85rem/1.4 var(--mono); }
+.paste-panel button { justify-self: start; }
+.actions a { align-self: center; font-size: .86rem; }
 .work-grid { margin-top: 1rem; display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, .39fr); gap: 1rem; align-items: start; }
 .head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: .65rem; }
 .head-row button, .paginate button, .compare button, .file-actions button { flex: none; font-size: .8rem; }

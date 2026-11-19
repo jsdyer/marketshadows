@@ -5,11 +5,11 @@ self.onmessage = async ({ data: { name, buffer } }) => {
   try {
     const { parseCsv, parseReport } = await model;
     let sheets;
-    if (/\.csv$/i.test(name)) {
+    if (/\.(csv|tsv)$/i.test(name)) {
       let text;
       try { text = new TextDecoder('utf-8', { fatal: true }).decode(buffer); }
       catch { text = new TextDecoder('windows-1252').decode(buffer); }
-      const rows = parseCsv(text);
+      const rows = parseCsv(text, /\.tsv$/i.test(name) ? '\t' : ',');
       if (rows.length >= maximumRows) throw new Error('This CSV exceeds the 30,000-row limit.');
       sheets = [{ rows }];
     } else {

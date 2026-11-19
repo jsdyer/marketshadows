@@ -28,15 +28,24 @@
 
   <main id="workbench" class="wrap main">
     <section class="panel intake" id="drop-zone" aria-labelledby="intake-title">
-      <div><h2 id="intake-title">Open a market report</h2><p>Drop one or more files here, or choose the CSV trading summary and XLS short position reports saved on your device.</p></div>
-      <div class="actions"><input id="file" type="file" accept=".csv,.xls,.xlsx" multiple hidden><button id="pick" type="button" class="primary">Choose files</button><button id="demo" type="button">Try sample reports</button></div>
+      <div><h2 id="intake-title">Open a market report</h2><p>Drop CIRO’s trading-summary CSV or short-position workbook here. Open two reports of the same type to rank changes between dates.</p></div>
+      <div class="actions"><input id="file" type="file" accept=".csv,.xls,.xlsx" multiple hidden><button id="pick" type="button" class="primary">Choose files</button><a href="#get-reports">Find the reports ↓</a></div>
+      <details class="paste-panel">
+        <summary>Paste rows from a report</summary>
+        <form id="paste-form">
+          <label for="paste-date">Reporting end date</label><input id="paste-date" type="date" required>
+          <label for="paste-table">Report table</label>
+          <p id="paste-hint">Copy column headings and rows from the worksheet, or paste comma-separated text from the original file. Only the rows you paste will appear.</p>
+          <textarea id="paste-table" rows="5" spellcheck="false" required aria-describedby="paste-hint"></textarea>
+          <button id="paste-open" type="submit">Open pasted rows</button>
+        </form>
+      </details>
       <p id="import-status" class="notice" role="status" aria-live="polite" hidden></p>
       <ul id="issues" class="issues" hidden></ul>
       <noscript><p>Enable JavaScript in your browser to read a report locally.</p></noscript>
     </section>
 
     <div id="workspace" hidden>
-      <div id="sample" class="sample" hidden>Sample workspace with fictional securities and values.</div>
       <div class="work-grid">
         <section class="panel market" aria-labelledby="market-title">
           <div class="head-row"><div><h2 id="market-title">Securities</h2><p id="results-status" aria-live="polite"></p></div><button id="export" type="button">Export filtered CSV</button></div>
@@ -94,7 +103,7 @@
       <div class="method-grid">
         <div><h3>Short sale trading</h3><p>Activity marked short during a half-month period. The share of traded volume uses total reported trading volume as its denominator.</p></div>
         <div><h3>Short positions</h3><p>Aggregate shares short on a reporting date, with the published change since the prior report. Compare like reports and check the original filing dates.</p></div>
-        <div><h3>Original reports</h3><p>Visit CIRO’s markets section to download the short sale trading statistics or consolidated short position reports. This app links to the publisher and analyzes files you supply.</p><a href="https://www.ciro.ca/">CIRO homepage ↗</a></div>
+        <div id="get-reports"><h3>Get the original files</h3><p>On CIRO’s site, open Markets → Reports, Statistics and Other Information → Short Sale Trading Statistics and Reports. Under Short Sale Trading Statistics Summary or Consolidated Short Position Report, save the files for two reporting dates. Keep their original filenames so the dates travel with your exports.</p><a href="https://www.ciro.ca/" target="_blank" rel="noopener">ciro.ca</a></div>
       </div>
     </section>
   </main>

@@ -4,12 +4,6 @@ const $ = id => document.getElementById(id);
 const pageSize = 30;
 const maxReports = 24;
 const maxBytes = 12 * 1024 * 1024;
-const demo = [
-  { symbol: 'DEMO.A', name: 'Harbour Circuit Holdings', market: 'TSX' },
-  { symbol: 'DEMO.B', name: 'Sideband Instruments', market: 'TSXV' },
-  { symbol: 'DEMO.C', name: 'Rain Coast Networks', market: 'CSE' },
-];
-
 let reports = [], type = 'trading', reportId = '', selected = null, page = 0;
 let filtered = [], series = [], movers = [], inFlight = false;
 
@@ -63,7 +57,6 @@ function syncControls() {
   const report = available.find(item => item.id === reportId) || available[0];
   reportId = report?.id || '';
   $('workspace').hidden = !reports.length;
-  $('sample').hidden = !reports.some(item => item.sample);
   $('view-trading').setAttribute('aria-pressed', String(type === 'trading'));
   $('view-position').setAttribute('aria-pressed', String(type === 'position'));
   $('report').replaceChildren(...available.map(item => option(item.id, `${dateLabel(item)} · ${item.name}`)));
@@ -232,9 +225,9 @@ function renderFiles() {
     const li = element('li');
     const name = element('div', report.name, 'filename');
     const parts = [report.type === 'trading' ? 'Trading summary' : 'Short positions', `${report.rows.length.toLocaleString('en-CA')} rows`];
-    if (!report.sample) parts.push(`SHA-256 ${report.id.slice(0, 12)}…`);
+    parts.push(`SHA-256 ${report.id.slice(0, 12)}…`);
     const summary = element('small', parts.join(' · '));
-    if (!report.sample) summary.title = `SHA-256 ${report.id}`;
+    summary.title = `SHA-256 ${report.id}`;
     const controls = element('div', '', 'file-actions');
     const date = element('input');
     date.type = 'date';
@@ -278,19 +271,19 @@ function parseFile(file) {
 async function loadFiles(files) {
   if (inFlight || !files.length) return;
   inFlight = true;
-  for (const id of ['pick', 'demo', 'clear']) $(id).disabled = true;
+  for (const id of ['pick', 'paste-open', 'clear']) $(id).disabled = true;
   renderFiles();
   $('issues').replaceChildren();
   $('issues').hidden = true;
   $('import-status').hidden = false;
-  const prior = reports.filter(report => !report.sample);
+  const prior = reports;
   const loaded = [];
   const issues = [];
   for (const file of files.slice(0, maxReports)) {
     if (prior.length + loaded.length >= maxReports) { issues.push(`This tab can hold ${maxReports} reports. Remove one before adding more.`); break; }
     $('import-status').textContent = `Reading ${file.name} locally…`;
     try {
-      if (!/\.(csv|xls|xlsx)$/i.test(file.name)) throw new Error('Choose a CSV, XLS or XLSX report.');
+      if (!/\.(csv|tsv|xls|xlsx)$/i.test(file.name)) throw new Error('Choose a CSV, XLS or XLSX report.');
       if (file.size < 8 || file.size > maxBytes) throw new Error('The file must be between 8 bytes and 12 MiB.');
       const report = await parseFile(file);
       if ([...prior, ...loaded].some(item => item.id === report.id)) throw new Error('That exact file is already open.');
@@ -299,7 +292,7 @@ async function loadFiles(files) {
   }
   if (files.length > maxReports) issues.push(`Only the first ${maxReports} selected files were checked.`);
   inFlight = false;
-  for (const id of ['pick', 'demo', 'clear']) $(id).disabled = false;
+  for (const id of ['pick', 'paste-open', 'clear']) $(id).disabled = false;
   if (loaded.length) {
     reports = [...prior, ...loaded];
     type = loaded[0].type;
@@ -312,33 +305,7 @@ async function loadFiles(files) {
   $('issues').replaceChildren(...issues.map(issue => element('li', issue)));
   $('issues').hidden = !issues.length;
   syncControls();
-}
-
-function showDemo() {
-  if (reports.some(report => !report.sample)) {
-    $('import-status').hidden = false;
-    $('import-status').textContent = 'Clear your imported reports before opening the fictional sample workspace.';
-    return;
-  }
-  const dates = [['2026-10-01', '2026-10-15'], ['2026-10-16', '2026-10-31']];
-  const fictional = ['trading', 'position'].flatMap(kind => dates.map(([start, date], period) => ({
-    type: kind, id: `${kind}-${period}`, name: `Example ${kind} ${period + 1}`, sample: true, date, start,
-    rows: demo.map((row, index) => {
-      const base = (index + 1) * 36000 + period * (index === 1 ? -4800 : 10030);
-      return kind === 'trading'
-        ? { ...row, volume: base, volumePercent: 12 + index * 1.4 + period, trades: 620 + index * 141, tradesPercent: 16.2 + index, value: base * 9, valuePercent: 15.81 + period }
-        : { ...row, shares: base * 2, change: period ? (index === 1 ? -9600 : 20060) : index * 1900 - 3000 };
-    }),
-  })));
-  reports = fictional;
-  type = 'trading';
-  selected = demo[0];
-  reportId = 'trading-1';
-  page = 0;
-  $('search').value = '';
-  $('import-status').hidden = true;
-  $('issues').hidden = true;
-  syncControls();
+  return loaded.length;
 }
 
 function download(name, grid) {
@@ -369,7 +336,16 @@ $('drop-zone').addEventListener('drop', event => {
   $('drop-zone').classList.remove('dragging');
   loadFiles(Array.from(event.dataTransfer.files));
 });
-$('demo').addEventListener('click', showDemo);
+$('paste-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const text = $('paste-table').value;
+  const extension = text.split(/\r?\n/, 10).some(line => line.includes('\t')) ? 'tsv' : 'csv';
+  const file = new File([text], `Pasted rows ${$('paste-date').value}.${extension}`);
+  if (await loadFiles([file])) {
+    $('paste-form').reset();
+    $('paste-form').closest('details').open = false;
+  }
+});
 for (const key of ['trading', 'position']) $('view-' + key).addEventListener('click', () => {
   type = key;
   reportId = '';

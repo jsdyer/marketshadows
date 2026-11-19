@@ -1,8 +1,12 @@
 # Market Shadows
 
-[Open Market Shadows on CoolCode.ca](https://coolcode.ca/marketshadows/) to explore Canadian short sale trading summaries and consolidated short position reports. Download the files you want from the Markets section of the [CIRO website](https://www.ciro.ca/), then open or drop them into the app. The fictional sample can be opened without any files.
+[Open Market Shadows on CoolCode.ca](https://coolcode.ca/marketshadows/) to explore Canadian short sale trading summaries and consolidated short position reports. On the [ciro.ca](https://www.ciro.ca/) home page, choose Markets → Reports, Statistics and Other Information → Short Sale Trading Statistics and Reports. Download the Summary CSV or Consolidated Short Position workbook for the dates you want. Choose the original files or paste column headings and rows from a report, with its reporting end date. Pasted CSV and spreadsheet selections stay in the tab and use the same parser as the file import.
 
-Market Shadows recognizes the standard English CIRO summary CSV and position XLS files, and XLSX exports of the same tables. It opens up to 24 files (12 MiB each), including reports from several dates. The report date comes from the filename when available, and the files panel lets you enter the end date manually. Duplicate files are detected by SHA-256. Only files and values you supply are represented.
+<!-- coolcode:guide -->
+Open the same CIRO report type for two dates, then choose a baseline under Changes between reports. Trading volume shows shares sold short during a period. A consolidated position shows shares held short at the reporting date.
+<!-- /coolcode:guide -->
+
+Market Shadows recognizes the standard English CIRO summary CSV and position XLS files, and XLSX exports of the same tables. It opens up to 24 files (12 MiB each), including reports from several dates. For files, the report date comes from the filename when available, and the files panel lets you enter the end date manually. Duplicate files are detected by SHA-256. Only files and values you supply are represented.
 
 Search by security symbol or company name, filter by listing market, and select a row to compare dates. Short sale trading includes volume and the reported share of trading volume. Consolidated positions show reported shares short at a date and the net change in the source. Comparisons match symbol and listing market. Check issuer identities and corporate actions in the original records. A blank observation means the corresponding value or unambiguous record was unavailable. Exports retain the report filename and date. Published correction tables are outside the current importer’s scope.
 
